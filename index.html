@@ -98,7 +98,7 @@
       recentTitle: 'Movimientos recientes', date: 'Fecha', plan: 'Plan', commission: 'Comisión', status: 'Estado',
       recentEmpty: 'Aún no hay movimientos. El primero aparece cuando alguien pague tras su mes gratis.',
       payoutsTitle: 'Pagos recibidos', reference: 'Referencia', amount: 'Importe', payoutsEmpty: 'Todavía no hay pagos.',
-      monthly: 'Mensual', yearly: 'Anual', lifetime: 'De por vida',
+      monthly: 'Mensual', yearly: 'Anual',
       howTitle: 'Cómo se calcula',
       how: 'Ganas el {rate} de lo que la app ingresa de verdad —una vez descontados el IVA y la comisión de Apple o Google— por cada periodo que paguen las personas que usaron tu código, durante sus primeros {months} meses. El mes gratis no genera comisión.',
       terms: 'Condiciones completas del programa', termsHref: 'condiciones.html',
@@ -120,7 +120,7 @@
       recentTitle: 'Recent activity', date: 'Date', plan: 'Plan', commission: 'Commission', status: 'Status',
       recentEmpty: 'Nothing yet. The first entry appears when someone pays after their free month.',
       payoutsTitle: 'Payouts received', reference: 'Reference', amount: 'Amount', payoutsEmpty: 'No payouts yet.',
-      monthly: 'Monthly', yearly: 'Yearly', lifetime: 'Lifetime',
+      monthly: 'Monthly', yearly: 'Yearly',
       howTitle: 'How it is calculated',
       how: 'You earn {rate} of what the app actually receives — after VAT and Apple\'s or Google\'s commission — for every period paid by people who used your code, during their first {months} months. The free month earns nothing.',
       terms: 'Full programme terms', termsHref: 'terms.html',
@@ -165,7 +165,7 @@
 
   const money = (n, cur) => new Intl.NumberFormat(t('locale'), { style: 'currency', currency: cur || 'EUR' }).format(Number(n) || 0);
   const day = (d) => new Date(d).toLocaleDateString(t('locale'), { day: 'numeric', month: 'short', year: 'numeric' });
-  const plan = (id) => /life/i.test(id || '') ? t('lifetime') : /year|annual/i.test(id || '') ? t('yearly') : /month/i.test(id || '') ? t('monthly') : (id || '—');
+  const plan = (id) => /year|annual/i.test(id || '') ? t('yearly') : /month/i.test(id || '') ? t('monthly') : (id || '—');
 
   function cell(text, cls) {
     const td = document.createElement('td');
