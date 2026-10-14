@@ -74,6 +74,7 @@
       <button type="button" role="tab" data-tab="influencers">Influencers</button>
       <button type="button" role="tab" data-tab="payouts">Payouts<span class="count" id="count-payouts" hidden></span></button>
       <button type="button" role="tab" data-tab="friends">Friends</button>
+      <button type="button" role="tab" data-tab="reports">AI reports<span class="count" id="count-reports" hidden></span></button>
       <button type="button" role="tab" data-tab="settings">Settings</button>
     </nav>
     <div id="global-msg" class="msg" hidden style="margin-bottom:16px"></div>
@@ -175,6 +176,23 @@
       </div>
     </section>
 
+    <!-- AI reports -->
+    <section data-panel="reports" hidden>
+      <p class="lead">What people flagged in the app with "Report": a scan result or an answer to "Ask about this plant" (Google Play requires this). Read each one, fix the cause if there is one, and mark it reviewed. Reports are deleted after 12 months.</p>
+      <div class="bar">
+        <h2 style="margin:0">Reports</h2>
+        <label><input type="checkbox" id="show-reviewed"> Show reviewed</label>
+      </div>
+      <div class="card table-wrap" style="margin-top:12px">
+        <table>
+          <thead><tr><th>Date</th><th>Reason</th><th>Plant</th><th>What the AI said</th><th>From</th><th></th></tr></thead>
+          <tbody id="reports"></tbody>
+        </table>
+        <p id="reports-empty" class="muted" hidden style="margin:12px 0 0">No reports. Good news.</p>
+        <div id="reports-msg" class="msg" hidden></div>
+      </div>
+    </section>
+
     <!-- Settings -->
     <section data-panel="settings" hidden>
       <h2 style="margin-top:0">Friends</h2>
@@ -210,7 +228,7 @@
 
   const $ = (id) => document.getElementById(id);
   let adminKey = null;
-  const state = { settings: null, friends: [], applications: [], influencers: [], payouts: null };
+  const state = { settings: null, friends: [], applications: [], influencers: [], payouts: null, reports: null };
   const ui = { confirming: null, approving: null, paying: null, editingLimit: null, appleOpen: new Set(), results: {} };
 
   // ---------------------------------------------------------------- helpers
@@ -629,6 +647,51 @@
     }
   });
 
+  // ---------------------------------------------------------------- AI reports
+  const REASONS = { wrong: 'Wrong', offensive: 'Offensive', unsafe: 'Unsafe advice', other: 'Other' };
+  function renderReports() {
+    if (state.reports === null) {
+      $('reports').replaceChildren();
+      $('reports-empty').hidden = false;
+      $('reports-empty').textContent = 'Reports are not installed yet: apply the migration 20261015000100_ai_reports.sql.';
+      $('count-reports').hidden = true;
+      return;
+    }
+    const open = state.reports.filter((r) => !r.reviewed_at);
+    $('count-reports').textContent = open.length;
+    $('count-reports').hidden = open.length === 0;
+    const shown = $('show-reviewed').checked ? state.reports : open;
+    $('reports').replaceChildren(...shown.map((r) => {
+      const said = h('td', null,
+        r.question ? h('div', { class: 'muted', text: 'Q: ' + r.question }) : null,
+        h('div', { text: r.content, style: 'white-space:pre-wrap;max-width:520px' }));
+      const from = [r.reporter, r.language, r.platform, r.app_version].filter(Boolean).join(' · ');
+      const action = h('td');
+      if (r.reviewed_at) action.append(pill('ready', 'Reviewed'));
+      else action.append(h('button', { type: 'button', class: 'secondary small', text: 'Reviewed', onclick: () => markReviewed(r) }));
+      return h('tr', null, cell(day(r.created_at), 'nowrap'),
+        h('td', null, pill(r.reason === 'offensive' || r.reason === 'unsafe' ? 'todo' : 'new', REASONS[r.reason] || r.reason),
+          h('div', { class: 'muted', text: r.kind === 'answer' ? 'Answer' : 'Scan result' })),
+        cell(r.plant_name || '–'), said, cell(from, 'mono'), action);
+    }));
+    $('reports-empty').hidden = shown.length > 0;
+    $('reports-empty').textContent = state.reports.length ? 'No open reports. Tick "Show reviewed" to see the others.' : 'No reports. Good news.';
+  }
+
+  async function markReviewed(r) {
+    try {
+      await rpc('admin_ai_report_reviewed', { p_id: r.id });
+      await loadReports();
+    } catch (err) { say($('reports-msg'), err.message, true); }
+  }
+
+  // Loaded on its own, so the rest of the page keeps working before the reports migration exists.
+  async function loadReports() {
+    try { state.reports = await rpc('admin_ai_reports', { p_all: true }); }
+    catch (err) { state.reports = null; console.warn('AI reports unavailable', err); }
+    renderReports();
+  }
+
   // ---------------------------------------------------------------- settings
   function renderSettings() {
     const s = state.settings;
@@ -655,6 +718,7 @@
     ]);
     Object.assign(state, { settings, friends, applications, influencers, payouts });
     renderSettings(); renderFriends(); renderApplications(); renderInfluencers(); renderPayouts();
+    await loadReports();
   }
 
   function showTab(name) {
@@ -702,10 +766,11 @@
 
   $('apps-all').addEventListener('change', renderApplications);
   $('show-old').addEventListener('change', renderFriends);
+  $('show-reviewed').addEventListener('change', renderReports);
   $('lock').addEventListener('click', () => {
     try { localStorage.removeItem(STORE); } catch {}
     adminKey = null;
-    Object.assign(state, { settings: null, friends: [], applications: [], influencers: [], payouts: null });
+    Object.assign(state, { settings: null, friends: [], applications: [], influencers: [], payouts: null, reports: null });
     $('app').hidden = true;
     $('locked').hidden = false;
   });
