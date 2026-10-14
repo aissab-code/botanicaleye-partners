@@ -48,6 +48,10 @@
       <label>Seguidores aproximados
         <input name="followers" type="number" inputmode="numeric" min="0" step="1">
       </label>
+      <label>El código que te gustaría <span class="muted">(opcional)</span>
+        <input name="code" maxlength="20" pattern="[A-Za-z0-9]{3,20}" autocapitalize="characters" placeholder="LAURA" style="text-transform:uppercase">
+        <small>De 3 a 20 letras o números, sin espacios. Lo usamos si está libre.</small>
+      </label>
       <label>Cuéntanos sobre tu comunidad <span class="muted">(opcional)</span>
         <textarea name="message" maxlength="2000"></textarea>
       </label>
@@ -103,8 +107,9 @@
         p_followers: f.get('followers') ? Number(f.get('followers')) : null,
         p_message: f.get('message') || null,
         p_consent: f.get('consent') === 'on',
+        p_code: (f.get('code') || '').trim() || null,
       });
-      say('¡Gracias! Hemos recibido tu solicitud y te escribiremos en unos días.');
+      say('¡Gracias! Hemos recibido tu solicitud. Si encaja, en unos días te llegarán por email tu código y tu panel privado.');
       form.reset();
     } catch (err) {
       if (!err.status) say('No hemos podido enviar la solicitud. Inténtalo de nuevo en un momento.', true);

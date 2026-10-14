@@ -48,6 +48,10 @@
       <label>Approximate followers
         <input name="followers" type="number" inputmode="numeric" min="0" step="1">
       </label>
+      <label>The code you would like <span class="muted">(optional)</span>
+        <input name="code" maxlength="20" pattern="[A-Za-z0-9]{3,20}" autocapitalize="characters" placeholder="LAURA" style="text-transform:uppercase">
+        <small>3 to 20 letters or digits, no spaces. We use it if it is free.</small>
+      </label>
       <label>Tell us about your community <span class="muted">(optional)</span>
         <textarea name="message" maxlength="2000"></textarea>
       </label>
@@ -103,8 +107,9 @@
         p_followers: f.get('followers') ? Number(f.get('followers')) : null,
         p_message: f.get('message') || null,
         p_consent: f.get('consent') === 'on',
+        p_code: (f.get('code') || '').trim() || null,
       });
-      say('Thank you! We have received your application and will write to you within a few days.');
+      say('Thank you! We have received your application. If it is a fit, you will get your code and your private dashboard by email within a few days.');
       form.reset();
     } catch (err) {
       if (!err.status) say('We could not send your application. Please try again in a moment.', true);
